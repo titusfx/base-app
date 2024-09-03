@@ -1,5 +1,5 @@
 from gradio_client import Client
-from .config import PORT, HOST, SCHEMA
+from config import PORT, HOST, SCHEMA
 
 
 # Initialize the client with the URL of the Gradio service
