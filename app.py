@@ -1,4 +1,5 @@
 import gradio as gr
+from .config import PORT
 
 # Define a simple function that will be the core of your Gradio app
 def greet(name):
@@ -17,8 +18,8 @@ with gr.Blocks() as app:
     btn = gr.Button("Run")
     btn.click(fn=greet, inputs=[inp], outputs=[out])
 
-    
+
 # Launch the Gradio app
 if __name__ == "__main__":
-    app.launch(server_name="0.0.0.0", server_port=7860)
+    app.launch(server_name="0.0.0.0", server_port=PORT)
 
