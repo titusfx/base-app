@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  gradio:
+    build: . # Use the Dockerfile in the current directory
+    container_name: gradio_app
+    ports:
+      - "7860:7860" # Expose the Gradio app on port 7860
+    environment:
+      - PYTHONUNBUFFERED=1 # Recommended for logging in real-time
+    volumes:
+      - .:/app # Mount the current directory to /app in the container
+
+networks:
+  default:
+    driver: bridge
