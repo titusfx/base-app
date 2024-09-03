@@ -1,13 +1,5 @@
 import gradio as gr
-
-# This define logic (greet method) and UI in the same file, probably is better in separated files for complex UI
-
-# LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC  LOGIC 
-# Define a simple function that will be the core of your Gradio app
-def greet(name):
-    return f"Hello, {name}!"
-
-
+from .logic_basic_example import greet
 
 # UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI
 
