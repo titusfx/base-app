@@ -8,8 +8,14 @@ services:
       - "7860:7860" # Expose the Gradio app on port 7860
     environment:
       - PYTHONUNBUFFERED=1 # Recommended for logging in real-time
+      - POETRY_VERSION=1.8.3
+      - PORT=7860
+    # env_file:
+    #   - .env
     volumes:
       - .:/app # Mount the current directory to /app in the container
+    command: ["poetry", "run", "gradio"]
+    # network_mode: "host" # For easy access from computer client
 
 networks:
   default:

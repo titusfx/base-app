@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "gradio-base-app"
+version = "0.1.0"
+description = ""
+authors = ["titus fx <titusfx@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+gradio = "^4.44.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+gradio = "gradio_base_app.app:main"
+client-gradio = "gradio_base_app.client_app:main"

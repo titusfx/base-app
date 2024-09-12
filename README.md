@@ -1,4 +1,9 @@
-# Start the project
+# Start
+
+poetry run gradio
+poetry run client-gradio
+
+# Start with docker
 
 ```bash
 docker compose up
