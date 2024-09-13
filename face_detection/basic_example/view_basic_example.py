@@ -1,5 +1,5 @@
 import gradio as gr
-from .logic_basic_example import greet
+from .logic_basic_example import extract_faces
 
 # UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI  UI
 
@@ -8,11 +8,20 @@ from .logic_basic_example import greet
 # btn = gr.Button("Execute")
 # btn.click(fn=greet, inputs=inp, outputs=out)
 
-gr.Markdown("Start typing below and then click **Run** to see the output.")
+
+num_images = 10
+gr.Markdown("# Face Extractor from Video")
 with gr.Row():
-    inp = [gr.Textbox(placeholder="What is your name?")]
-    out = [gr.Textbox()]
-btn = gr.Button("Run")
-btn.click(fn=greet, inputs=inp, outputs=out)
+    # First row: Video upload
+    video_input = gr.Video(label="Upload Video")
+with gr.Row():
+    # Second row: Display images (as placeholders)
+    images_output = [gr.Image(label=f"Image {i+1}") for i in range(num_images)]
+
+# Third row: Button to trigger face extraction
+extract_button = gr.Button("Extract Faces")
+
+# Setting up interaction
+extract_button.click(fn=extract_faces, inputs=video_input, outputs=images_output)
 
 
