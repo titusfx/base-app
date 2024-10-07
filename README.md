@@ -4,13 +4,13 @@
 
 git remote set-url origin <NEW-project>
 
-<!-- replace `gradio-base-app` with `face_transcriber` (better to use _ than -) -->
+<!-- replace `scoreboard-padel` with `face_transcriber` (better to use _ than -) -->
 
-replace `gradio-base-app` with `project_name` (better to use \_ than -)
+replace `scoreboard-padel` with `project_name` (better to use \_ than -)
 
-<!-- replace `gradio_base_app` with `face_transcriber` (better to use _ than -) -->
+<!-- replace `scoreboard_padel` with `face_transcriber` (better to use _ than -) -->
 
-replace `gradio_base_app` with `project_name` (better to use \_ than -)
+replace `scoreboard_padel` with `project_name` (better to use \_ than -)
 
 # Start
 
