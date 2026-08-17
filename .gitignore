@@ -2,3 +2,13 @@ __pycache__
 .env
 venv/**
 env/**
+
+# Local project backup - standard ignores
+.angular/
+node_modules/
+env/
+.venv/
+__pycache__/
+*.pt
+*.pbj
+dist/
