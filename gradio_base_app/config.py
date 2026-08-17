@@ -1,0 +1,3 @@
+PORT = 7860
+HOST= "127.0.0.1"
+SCHEMA="http://"
