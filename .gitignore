@@ -2,6 +2,11 @@ __pycache__
 .env
 venv/**
 env/**
+tmp/**
+*.mp4
+*.jpeg
+*.jpg
+*.png
 
 # Local project backup - standard ignores
 .angular/
