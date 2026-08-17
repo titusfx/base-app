@@ -8,9 +8,14 @@ import cv2
 import os
 import datetime
 from collections import defaultdict
+from scoreboard_padel.basic_example.video_utils import separate_game_videos
 
 
 from scoreboard_padel.basic_example.reader import IReader, PaddleReader
+from scoreboard_padel.basic_example.game_utils import (
+    get_games,
+    group_detections_by_score,
+)
 from utils_files import save_data, load_data
 
 
@@ -170,12 +175,21 @@ def match_bboxes(bbox1, bbox2, threshold=0.5):
     return overlap_ratio >= threshold
 
 
+def is_number(text: str):
+    try:
+        float(text)
+        return True
+    except ValueError:
+        return False
+
+
 # Detect the scoreboard area in the last frame based on the '40'
 def organize_detections(
     detections,
     frame_index,
     jump,
-    candidates,
+    game_points_candidates,
+    other_points_candidates,  # sets, extra, etc
     threshold=0.75,
     transcription_list=[],
     transcription={},
@@ -195,7 +209,17 @@ def organize_detections(
             "confidence": confidence,
         }
         if text in target_scores:
-            candidates.setdefault(frame_index, []).append(
+            game_points_candidates.setdefault(frame_index, []).append(
+                {
+                    "frame_index": frame_index,
+                    "timestamp": str(
+                        datetime.timedelta(seconds=int(frame_index / fps))
+                    ),
+                    "object_data": object_data,
+                }
+            )
+        if text == "0" or (text not in target_scores and (is_number(text))):
+            other_points_candidates.setdefault(frame_index, []).append(
                 {
                     "frame_index": frame_index,
                     "timestamp": str(
@@ -212,51 +236,6 @@ def organize_detections(
         transcription_list.append(object_data)
         transcription[frame_index] = object_data
     return discarded_detections
-
-
-def separate_game_videos(video_input, games, desc, output_folder="games"):
-    # Ensure the output folder exists
-    os.makedirs(output_folder, exist_ok=True)
-
-    # Open the input video
-    cap = cv2.VideoCapture(video_input)
-    if not cap.isOpened():
-        raise ValueError(f"Cannot open video file: {video_input}")
-
-    # Get video properties
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    for game_index, game in enumerate(games):
-        if not game:  # Skip empty games
-            continue
-
-        start_frame = game[0]["frame_index"]
-        end_frame = game[-1]["frame_index"]
-        if desc:
-            start_frame, end_frame = end_frame, start_frame
-
-        # Set the video to the start frame
-        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-
-        # Create a VideoWriter object
-        output_path = os.path.join(output_folder, f"game_{game_index + 1}.mp4")
-        out = cv2.VideoWriter(
-            output_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
-        )
-
-        for frame_index in range(start_frame, end_frame + 1):
-            ret, frame = cap.read()
-            if not ret:
-                break
-            out.write(frame)
-
-        out.release()
-        print(f"Game {game_index + 1} saved to {output_path}")
-
-    cap.release()
-    print("All game videos have been separated and saved.")
 
 
 def debug_save_data_to_debug(frame_index, current_frame, detections, fps):
@@ -279,6 +258,7 @@ def find_scoreboard(video_input, jump=2, in_seconds=True, desc=False):
         transcription_list = []
         transcription = {}
         candidates_points = {}
+        other_points_candidates = {}
         candidates_games = {}
         target_scores = ["40", "30", "15", "0"]
         discarded_detections = []
@@ -293,7 +273,8 @@ def find_scoreboard(video_input, jump=2, in_seconds=True, desc=False):
                 detections,
                 frame_index=frame_index,
                 jump=jump,
-                candidates=candidates_points,
+                game_points_candidates=candidates_points,
+                other_points_candidates=other_points_candidates,
                 threshold=0.75,
                 transcription_list=transcription_list,
                 transcription=transcription,
@@ -327,13 +308,20 @@ def find_scoreboard(video_input, jump=2, in_seconds=True, desc=False):
         # Save candidates and games for future use
         save_data(
             video_input,
+            other_points_candidates,
+            data_type="other_points_candidates",
+            local_folder=local_folder,
+        )
+
+        save_data(
+            video_input,
             candidates_points,
             data_type="candidates",
             local_folder=local_folder,
         )
 
         # Separate in possible games
-        games = get_games(candidates_points, desc)
+        games = get_games(candidates_points, desc, fps)
 
         save_data(video_input, games, data_type="games", local_folder=local_folder)
         save_data(
@@ -361,110 +349,6 @@ def find_scoreboard(video_input, jump=2, in_seconds=True, desc=False):
     # Analyze the scoreboard after processing all frames
     # games = analyze_scoreboard(candidates_points, desc)
     return "a"
-
-
-def group_detections_by_score(detections, target_scores):
-    # Group detections by score
-    lists_by_score = {score: [] for score in target_scores}
-    all_scores = []
-    for detection in detections:
-        text = detection["object_data"]["text"]
-        if text in target_scores:
-            lists_by_score[text].append(detection)
-            all_scores.append(detection)
-    return lists_by_score, all_scores
-
-
-def get_games(candidates, desc):
-    """This assumes that after 40 is game.
-    And in fact is a gold point match
-
-    Args:
-        candidates (_type_): _description_
-        desc (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    print("get_games")
-    games = []
-    sets = []
-    target_scores = ["40", "30", "15", "0"]
-    current_game = []
-    on_change_create_new_game_score_1 = False
-    on_change_create_new_game_score_2 = False
-    is_a_frame_of_a_new_game_with_anomaly = False
-    for frame_index, detections in sorted(candidates.items(), reverse=desc):
-        lists_by_score, all_scores = group_detections_by_score(
-            detections, target_scores
-        )
-
-        # Just analize simple cases
-        is_simple_case = len(all_scores) == 2
-        if not is_simple_case:
-            print(f"WARNING: Complex case detected at frame {frame_index}.")
-            continue
-        print(
-            f"frame_index: {frame_index} , timestamp {str(datetime.timedelta(seconds=int(frame_index / fps)))}, "
-        )
-        score_1 = int(all_scores[0]["object_data"]["text"])
-        score_2 = int(all_scores[1]["object_data"]["text"])
-        game_moment = {
-            "score_1": score_1,
-            "score_2": score_2,
-            # "is_start_game": False, # we can detect this because detecting desc and if is the first or last game_moment
-            # "is_end_game": False, # we can detect this because detecting desc and if is the first or last game_moment
-            # desc: desc # we can detect this because if frame_index increase or decrease in a game
-            "frame_index": frame_index,
-        }
-        # Detect end of a game if desc check with 0 if asc check with 40
-        edge_value = 0 if desc else 40
-        if score_1 == edge_value:
-            on_change_create_new_game_score_1 = True
-        if score_2 == edge_value:
-            on_change_create_new_game_score_2 = True
-
-        # New Game to track
-        is_a_frame_of_a_new_game = (
-            on_change_create_new_game_score_1
-            and score_1 != edge_value
-            or on_change_create_new_game_score_2
-            and score_2 != edge_value
-        )
-
-        if len(current_game) > 0:
-            prev_score_1 = current_game[-1]["score_1"]
-            prev_score_2 = current_game[-1]["score_2"]
-            # This means that "the game didn't finish", that the algorithm couldn't detect all texts.
-            if desc:
-                is_a_frame_of_a_new_game_with_anomaly = not (
-                    prev_score_1 >= score_1 and prev_score_2 >= score_2
-                )
-            else:
-                is_a_frame_of_a_new_game_with_anomaly = not (
-                    prev_score_1 <= score_1 and prev_score_2 <= score_2
-                )
-
-        if is_a_frame_of_a_new_game:
-            games.append(current_game)
-            # Restart current_game_tracking
-            current_game = [game_moment]
-            on_change_create_new_game_score_1 = False
-            on_change_create_new_game_score_2 = False
-            is_a_frame_of_a_new_game_with_anomaly = False
-        elif is_a_frame_of_a_new_game_with_anomaly:
-            for g in current_game:
-                g["has_anomaly"] = True
-            games.append(current_game)
-            # Restart current_game_tracking
-            current_game = [game_moment]
-            on_change_create_new_game_score_1 = False
-            on_change_create_new_game_score_2 = False
-            is_a_frame_of_a_new_game_with_anomaly = False
-        else:
-            current_game.append(game_moment)
-
-    return games
 
 
 def analyze_scoreboard(candidates, desc=False):

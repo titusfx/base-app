@@ -7,3 +7,13 @@ tmp/**
 *.jpeg
 *.jpg
 *.png
+
+# Local project backup - standard ignores
+.angular/
+node_modules/
+env/
+.venv/
+__pycache__/
+*.pt
+*.pbj
+dist/

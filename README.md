@@ -1,3 +1,7 @@
+# base-app
+
+
+
 # New project with template
 
 <!-- git remote set-url origin git@github.com:titusfx/transcription-with-face-source.git -->
